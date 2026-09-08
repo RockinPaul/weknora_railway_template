@@ -1,0 +1,9 @@
+FROM wechatopenai/weknora-docreader:v0.8.0
+
+# Document parser, gRPC on [::]:50051, private network only. Pinned here so an upgrade is a
+# one-line change in this repo like the other two images.
+ENV DOCREADER_GRPC_PORT=50051 \
+    LOG_LEVEL=info \
+    TZ=UTC
+
+EXPOSE 50051

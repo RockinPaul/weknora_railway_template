@@ -1,0 +1,14 @@
+FROM wechatopenai/weknora-ui:v0.8.0
+
+# Same UI bundle as upstream; only the nginx config template and the start wrapper differ.
+COPY web/default.conf.template /etc/nginx/templates/default.conf.template
+COPY --chmod=755 web/entrypoint.sh /railway-entrypoint.sh
+
+ENV PORT=80 \
+    APP_HOST=app.railway.internal \
+    APP_PORT=8080 \
+    APP_SCHEME=http \
+    DEFAULT_LOCALE=en-US
+
+EXPOSE 80
+ENTRYPOINT ["/railway-entrypoint.sh"]
