@@ -3,8 +3,8 @@
 ## 2026-09 — initial release, WeKnora v0.8.0
 
 - Five services: `frontend` (`Dockerfile.web` over `wechatopenai/weknora-ui:v0.8.0`), `app` (`Dockerfile.app` over `wechatopenai/weknora-app:v0.8.0`), `docreader` (`Dockerfile.docreader` over `wechatopenai/weknora-docreader:v0.8.0`), `Postgres` (`paradedb/paradedb:v0.22.2-pg17`), `Redis` (Railway image).
-- `web/default.conf.template` is upstream's nginx config with a dual-stack listener on `PORT`, Railway's DNS resolver and a variable upstream; `web/entrypoint.sh` renders those and hands over to upstream's start script.
-- `app-entrypoint.sh` validates `JWT_SECRET` and the 32-character `SYSTEM_AES_KEY`, binds on `::` and runs upstream's entrypoint. Registration is open; the system administrator is promoted through `WEKNORA_BOOTSTRAP_SYSTEM_ADMIN_EMAIL`.
+- `web/default.conf.template` is upstream's nginx config with a dual-stack listener on `PORT`, Railway's DNS resolver, a variable upstream and header maps that keep the edge's `X-Forwarded-Proto` and strip its `X-Forwarded-For` hop; `web/entrypoint.sh` renders those and hands over to upstream's start script.
+- `app-entrypoint.sh` validates `JWT_SECRET` and the 32-character `SYSTEM_AES_KEY`, binds on `[::]` and runs upstream's entrypoint. Registration is open; the system administrator is promoted through `WEKNORA_BOOTSTRAP_SYSTEM_ADMIN_EMAIL`.
 - Not included: MinIO, Neo4j, alternative vector stores, SearXNG, Dex, Langfuse, MCP server, agent sandbox.
 - Volumes: `Postgres`, `Redis`, `app` (`/data/files`). Healthchecks: `app` `/health`, `frontend` `/`.
 

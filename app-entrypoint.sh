@@ -10,7 +10,7 @@ done
 # The server exits when Postgres is unreachable; on a first deploy the database may still be
 # initialising, so wait for its port instead of burning Railway restart attempts.
 i=0
-until bash -c "exec 3<>/dev/tcp/${DB_HOST}/${DB_PORT:-5432}" 2>/dev/null; do
+until bash -c 'exec 3<>"/dev/tcp/$0/$1"' "$DB_HOST" "${DB_PORT:-5432}" 2>/dev/null; do
   i=$((i+1)); [ "$i" -le 60 ] || { echo "Postgres at ${DB_HOST}:${DB_PORT:-5432} not reachable after 120s" >&2; exit 1; }
   [ $((i % 5)) -eq 1 ] && echo "waiting for Postgres at ${DB_HOST}:${DB_PORT:-5432}..."
   sleep 2

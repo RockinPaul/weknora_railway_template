@@ -1,7 +1,10 @@
 FROM wechatopenai/weknora-ui:v0.8.0
 
-# Same UI bundle as upstream; only the nginx config template and the start wrapper differ.
+# Same UI bundle as upstream; only the nginx config (template, proxy include, header maps) and the
+# start wrapper differ.
 COPY web/default.conf.template /etc/nginx/templates/default.conf.template
+COPY web/00-railway-maps.conf /etc/nginx/conf.d/00-railway-maps.conf
+COPY web/api-proxy.conf /etc/nginx/api-proxy.conf
 COPY --chmod=755 web/entrypoint.sh /railway-entrypoint.sh
 
 ENV PORT=80 \

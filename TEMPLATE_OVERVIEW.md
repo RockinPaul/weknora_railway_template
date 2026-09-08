@@ -1,6 +1,6 @@
 # Deploy and Host WeKnora on Railway
 
-WeKnora is Tencent's open-source knowledge base and agent platform. Upload PDFs, Office documents, web pages and images; WeKnora parses them (including images and tables), chunks and embeds them, and lets you chat with the knowledge, build agents with tools and skills, share workspaces with a team, and reach everything through a REST API, an MCP server, a CLI and IM integrations. This template deploys the upstream core stack at release v0.8.0: web UI, Go backend, document parser, ParadeDB (Postgres 17 with pgvector and pg_search) and Redis.
+WeKnora is Tencent's open-source knowledge base and agent platform. Upload PDFs, Office documents, web pages and images; WeKnora parses them (including images and tables), chunks and embeds them, and lets you chat with the knowledge, build agents with tools and skills, share workspaces with a team, and reach everything through a REST API, a CLI and IM integrations. This template deploys the upstream core stack at release v0.8.0: web UI, Go backend, document parser, ParadeDB (Postgres 17 with pgvector and pg_search) and Redis.
 
 ## About Hosting WeKnora
 
@@ -9,7 +9,7 @@ Hosting WeKnora on Railway means five services wired over the private network wi
 ## Common Use Cases
 
 - A private knowledge base for a team: upload documentation, contracts or research and ask questions with cited answers
-- Agents with tools and skills over your own documents, exposed to other systems through the REST API or MCP server
+- Agents with tools and skills over your own documents, exposed to other systems through the REST API
 - Customer or employee assistants connected to IM channels such as Feishu, WeCom, DingTalk or Slack
 
 ## Dependencies for WeKnora Hosting
@@ -26,7 +26,7 @@ Hosting WeKnora on Railway means five services wired over the private network wi
 ### Implementation Details
 
 - `frontend`: `wechatopenai/weknora-ui:v0.8.0` with a Railway-aware nginx config (DNS resolver, variable upstream, dual-stack listener), healthcheck `/`, public domain.
-- `app`: `wechatopenai/weknora-app:v0.8.0`, wrapper validates `JWT_SECRET` and the 32-character `SYSTEM_AES_KEY`, binds on `::`, runs upstream's entrypoint; healthcheck `/health`; volume `/data/files` for uploads.
+- `app`: `wechatopenai/weknora-app:v0.8.0`, wrapper validates `JWT_SECRET` and the 32-character `SYSTEM_AES_KEY`, binds on `[::]`, runs upstream's entrypoint; healthcheck `/health`; volume `/data/files` for uploads.
 - `docreader`: `wechatopenai/weknora-docreader:v0.8.0`, gRPC on 50051, private only.
 - `Postgres`: `paradedb/paradedb:v0.22.2-pg17` with a volume, required for the `pg_search` extension. `Redis`: Railway's Redis image with a volume.
 

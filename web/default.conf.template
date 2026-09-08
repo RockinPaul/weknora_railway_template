@@ -3,13 +3,17 @@
 #   * listens on __PORT__ (IPv4 and IPv6), rendered by /railway-entrypoint.sh
 #   * resolver __RESOLVER__ + a variable upstream, so nginx re-resolves the app's private
 #     address on every request instead of once at startup (Railway changes it on redeploy)
-#   * every proxy_pass targets $app_upstream without a URI (identity rewrites upstream anyway)
+#   * every proxy_pass targets $app_upstream without a URI: nginx then forwards the raw request URI
+#     (upstream's `proxy_pass .../api/` rewrote the normalized URI, which for these locations is the
+#     same path; dot segments now reach the app unnormalized and get a 404 there)
+#   * X-Forwarded-Proto/-For come from the maps in 00-railway-maps.conf (Railway edge chain)
 # ${APP_SCHEME}/${APP_HOST}/${APP_PORT}/${MAX_FILE_SIZE}/${MAX_SKILL_BUNDLE_SIZE} are still filled by
 # upstream's /docker-entrypoint.sh (envsubst); nginx's own $variables are untouched.
 server {
     listen __PORT__;
     listen [::]:__PORT__;
     resolver __RESOLVER__ valid=10s ipv6=on;
+    resolver_timeout 5s;
     set $app_upstream ${APP_SCHEME}://${APP_HOST}:${APP_PORT};
     server_name localhost;
     # Default 50M, configured via MAX_FILE_SIZE_MB env var
@@ -95,8 +99,8 @@ server {
         proxy_pass $app_upstream;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-For $client_xff;
+        proxy_set_header X-Forwarded-Proto $fwd_proto;
     }
 
     # 资源能力短链 /r/<token>：IM 渠道渲染 resource:// 图片依赖此路由，
@@ -105,8 +109,8 @@ server {
         proxy_pass $app_upstream;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-For $client_xff;
+        proxy_set_header X-Forwarded-Proto $fwd_proto;
     }
 
     # 技能 zip 上传的两条集合路由，body 上限放宽到 MAX_SKILL_BUNDLE_SIZE。

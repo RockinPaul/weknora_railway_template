@@ -2,7 +2,7 @@
 
 [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/weknora?referralCode=YqmMB-&utm_medium=integration&utm_source=template&utm_campaign=generic)
 
-Railway template for [WeKnora](https://github.com/Tencent/WeKnora), Tencent's open-source (MIT) knowledge base and agent platform: upload documents, get them parsed, chunked and embedded, then chat with them, build agents with tools and skills, share workspaces with a team, and expose everything through a REST API, MCP server and IM integrations. It deploys the upstream core stack at a pinned release:
+Railway template for [WeKnora](https://github.com/Tencent/WeKnora), Tencent's open-source (MIT) knowledge base and agent platform: upload documents, get them parsed, chunked and embedded, then chat with them, build agents with tools and skills, share workspaces with a team, and expose everything through a REST API and IM integrations (upstream's separate MCP server is not part of this template). It deploys the upstream core stack at a pinned release:
 
 | Service | Runs | Source |
 |---|---|---|
@@ -12,7 +12,7 @@ Railway template for [WeKnora](https://github.com/Tencent/WeKnora), Tencent's op
 | `Postgres` | metadata, vectors and full-text index | `paradedb/paradedb:v0.22.2-pg17` (Postgres 17 with pgvector and pg_search, which WeKnora's migrations require) |
 | `Redis` | queue and streaming | Railway's Redis image |
 
-Not included: MinIO, Neo4j graph RAG, the alternative vector stores, SearXNG, Dex, Langfuse and the agent sandbox (it needs a Docker socket). All are optional upstream and can be added as separate services later; the variables they need are documented in upstream's `.env.example`.
+Not included: MinIO, Neo4j graph RAG, the alternative vector stores, SearXNG, Dex, Langfuse, the MCP server and the agent sandbox (it needs a Docker socket). All are optional upstream and can be added as separate services later; the variables they need are documented in upstream's `.env.example`.
 
 ## First login
 
@@ -37,18 +37,19 @@ Not included: MinIO, Neo4j graph RAG, the alternative vector stores, SearXNG, De
 | `MAX_FILE_SIZE_MB` | `50` | Upload limit, shared with `frontend` and `docreader` by reference. |
 | `DISABLE_REGISTRATION` | `false` | `true` forces invite-only registration. |
 | `LOG_LEVEL` | `info` | |
-| `WEKNORA_LANGUAGE` | `en-US` (image default) | Backend language for generated content; `zh-CN` upstream. |
+| `WEKNORA_LANGUAGE` | `en-US` (set in `Dockerfile.app`) | Backend language for generated content; upstream falls back to `zh-CN` when unset. |
 
 `frontend`: `APP_HOST=${{app.RAILWAY_PRIVATE_DOMAIN}}`, `APP_PORT=8080`, `APP_SCHEME=http`, `DEFAULT_LOCALE=en-US`, `MAX_FILE_SIZE_MB=${{app.MAX_FILE_SIZE_MB}}`, `PORT=80`. `docreader`: `MAX_FILE_SIZE_MB=${{app.MAX_FILE_SIZE_MB}}`, `LOG_LEVEL=info`. `Postgres`: `POSTGRES_USER=postgres`, `POSTGRES_PASSWORD` generated, `POSTGRES_DB=weknora`, `PGDATA=/var/lib/postgresql/data/pgdata`. `Redis`: Railway's standard variables.
 
-Everything else (models, chunking, retrieval, agents, SSO, IM channels) is configured in the UI or through upstream's environment variables, which pass straight through to the unchanged upstream images.
+Everything else (models, chunking, retrieval, agents, SSO, IM channels) is configured in the UI or through upstream's environment variables, which pass straight through to the unchanged upstream images. Service settings such as healthchecks, volumes, ports and the variables above live in the Railway template definition, not in this repository; the repo only holds the images and their wrappers.
 
 ## How it fits together
 
-- `app` runs upstream's image with a small wrapper: it checks the secrets, sets `SERVER_HOST=::` so the Go server listens on IPv4 and IPv6 for Railway's private network, and then runs upstream's own entrypoint, which hands the upload volume to the unprivileged `appuser` and starts the server. Migrations run automatically (`AUTO_MIGRATE=true`). Healthcheck `/health`.
+- `app` runs upstream's image with a small wrapper: it checks the secrets, sets `SERVER_HOST=[::]` so the Go server listens on IPv4 and IPv6 for Railway's private network, and then runs upstream's own entrypoint, which hands the upload volume to the unprivileged `appuser` and starts the server. Migrations run automatically (`AUTO_MIGRATE=true`). Healthcheck `/health`.
 - `frontend` keeps upstream's nginx config, with three changes: it listens on `PORT`, it resolves the app's address through Railway's DNS on every request instead of once at startup (so it survives `app` redeploys), and all proxy targets use that variable upstream. Upstream's start script still renders upload limits and locale into the page.
 - `docreader` is upstream's image with a pinned tag. Extracted images travel inline over gRPC, so no shared volume between `app` and `docreader` is needed. It has no HTTP endpoint, so no Railway healthcheck.
-- Client addresses: WeKnora trusts private-network proxies by default (`WEKNORA_TRUSTED_PROXIES` to change). Railway's edge appends its own address to `X-Forwarded-For`, which Gin's default resolution handles by taking the first entry.
+- Client addresses: Railway's edge sends `X-Forwarded-For` as the visitor followed by the edge's own public address, and `X-Forwarded-Proto: https`. `frontend` strips that last hop and forwards the edge's scheme, so WeKnora, which walks the header right to left and trusts private-network peers by default (`WEKNORA_TRUSTED_PROXIES` to change), sees the real client and builds `https://` OIDC callback URLs. Another proxy in front of Railway stays in the chain: add its ranges to `WEKNORA_TRUSTED_PROXIES`.
+- Databases: `Postgres` is the ParadeDB image with `PGDATA` in a subdirectory of the volume, because Railway volumes carry a `lost+found` directory that initdb refuses to share; ParadeDB's own init script preloads pg_search, pgvector and friends into `template1` and the `weknora` database. `Redis` runs Railway's usual image with a start command that removes that empty `lost+found` directory first, otherwise the image skips fixing permissions and snapshots fail.
 - Sizing: upstream's Helm defaults are 1 GiB for `app`, 512 MiB each for `docreader` and Postgres. Parsing large PDFs is the memory hot spot; raise `docreader` first if parsing fails. The `docreader` image is 1.5 GB compressed, so its first deploy takes a few minutes.
 
 ## Upgrading WeKnora

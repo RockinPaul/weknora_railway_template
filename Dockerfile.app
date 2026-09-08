@@ -12,7 +12,6 @@ ENV GIN_MODE=release \
     RETRIEVE_DRIVER=postgres \
     STREAM_MANAGER_TYPE=redis \
     REDIS_DB=0 \
-    REDIS_PREFIX=stream: \
     STORAGE_TYPE=local \
     LOCAL_STORAGE_BASE_DIR=/data/files \
     DOCREADER_TRANSPORT=grpc \
