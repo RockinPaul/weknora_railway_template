@@ -1,4 +1,4 @@
-FROM wechatopenai/weknora-docreader:v0.8.0
+FROM wechatopenai/weknora-docreader:v0.8.2
 
 # Document parser, gRPC on [::]:50051, private network only. Pinned here so an upgrade is a
 # one-line change in this repo like the other two images.

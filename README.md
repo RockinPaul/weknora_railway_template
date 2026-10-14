@@ -6,9 +6,9 @@ Railway template for [WeKnora](https://github.com/Tencent/WeKnora), Tencent's op
 
 | Service | Runs | Source |
 |---|---|---|
-| `frontend` | the web UI and the only public entry point; proxies `/api/`, `/files` and `/r/` to the app | `Dockerfile.web` over `wechatopenai/weknora-ui:v0.8.0` |
-| `app` | Go backend, migrations, background jobs; uploads live on its volume | `Dockerfile.app` over `wechatopenai/weknora-app:v0.8.0` |
-| `docreader` | document parser (PDF, Office, HTML, images) behind gRPC, private only | `Dockerfile.docreader` over `wechatopenai/weknora-docreader:v0.8.0` |
+| `frontend` | the web UI and the only public entry point; proxies `/api/`, `/files` and `/r/` to the app | `Dockerfile.web` over `wechatopenai/weknora-ui:v0.8.2` |
+| `app` | Go backend, migrations, background jobs; uploads live on its volume | `Dockerfile.app` over `wechatopenai/weknora-app:v0.8.2` |
+| `docreader` | document parser (PDF, Office, HTML, images) behind gRPC, private only | `Dockerfile.docreader` over `wechatopenai/weknora-docreader:v0.8.2` |
 | `Postgres` | metadata, vectors and full-text index | `paradedb/paradedb:v0.22.2-pg17` (Postgres 17 with pgvector and pg_search, which WeKnora's migrations require) |
 | `Redis` | queue and streaming | Railway's Redis image |
 
