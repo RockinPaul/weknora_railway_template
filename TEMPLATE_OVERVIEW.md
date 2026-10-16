@@ -25,10 +25,10 @@ Hosting WeKnora on Railway means five services wired over the private network wi
 
 ### Implementation Details
 
-- `frontend`: `wechatopenai/weknora-ui:v0.8.2` with a Railway-aware nginx config (DNS resolver, variable upstream, dual-stack listener), healthcheck `/`, public domain.
-- `app`: `wechatopenai/weknora-app:v0.8.2`, wrapper validates `JWT_SECRET` and the 32-character `SYSTEM_AES_KEY`, binds on `[::]`, runs upstream's entrypoint; healthcheck `/health`; volume `/data/files` for uploads.
-- `docreader`: `wechatopenai/weknora-docreader:v0.8.2`, gRPC on 50051, private only.
-- `Postgres`: `paradedb/paradedb:v0.22.2-pg17` with a volume, required for the `pg_search` extension. `Redis`: Railway's Redis image with a volume.
+- `frontend`: `wechatopenai/weknora-ui:v0.8.3` with a Railway-aware nginx config (DNS resolver, variable upstream, dual-stack listener), healthcheck `/`, public domain.
+- `app`: `wechatopenai/weknora-app:v0.8.3`, wrapper validates `JWT_SECRET` and the 32-character `SYSTEM_AES_KEY`, binds on `[::]`, runs upstream's entrypoint; healthcheck `/health`; volume `/data/files` for uploads.
+- `docreader`: `wechatopenai/weknora-docreader:v0.8.3`, gRPC on 50051, private only.
+- `Postgres`: `paradedb/paradedb:v0.25.11-pg17` with a volume, required for the `pg_search` extension. `Redis`: Railway's Redis image with a volume.
 
 First login: register on the web domain, set `WEKNORA_BOOTSTRAP_SYSTEM_ADMIN_EMAIL` on `app` to that email and redeploy `app` once to become system administrator, then add your models under Settings, Model Management.
 

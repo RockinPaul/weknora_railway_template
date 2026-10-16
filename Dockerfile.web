@@ -1,4 +1,4 @@
-FROM wechatopenai/weknora-ui:v0.8.2
+FROM wechatopenai/weknora-ui:v0.8.3
 
 # Same UI bundle as upstream; only the nginx config (template, proxy include, header maps) and the
 # start wrapper differ.

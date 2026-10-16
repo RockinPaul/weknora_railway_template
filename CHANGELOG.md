@@ -1,5 +1,38 @@
 # Changelog
 
+## 2026-10-16 — WeKnora v0.8.3, and ParadeDB v0.25.11 for Postgres
+
+- `frontend`, `app` and `docreader` run `wechatopenai/weknora-ui`, `-app` and `-docreader` `:v0.8.3` (were v0.8.2). The nginx config upstream ships is unchanged, so `web/` only changes its version comments.
+- Security fixes since v0.8.2 include scoping agent database queries to the shared knowledge bases a user may see, keeping LLM debug records inside their directory, and size caps on connector API responses (Yuque, Notion, IMA, Feishu).
+- **The `Postgres` service should move to `paradedb/paradedb:v0.25.11-pg17`** (new deploys get it from the template). Upstream found that large imports on the v0.22 images can drive Postgres into a crash-and-recovery loop: the pgvector 0.8.1 those images ship has HNSW index corruption bugs fixed in 0.8.2–0.8.4, and pg_search had no crash recovery before 0.24. The image is a Railway service setting, not a file in this repo, so **an existing deployment keeps v0.22.2 until you change it** — see below.
+- `docreader` now starts through upstream's own entrypoint, which only changes anything on ARM machines. New optional `app` variables for outbound and parser timeouts (`WEKNORA_OUTBOUND_DIAL_TIMEOUT`, `WEKNORA_MINERU_TIMEOUT` and others); unset means upstream's defaults.
+
+### Upgrading an existing deployment
+
+Back up Postgres and the `app` volume first. `app` migrates the schema from version 110 to 118 on its first start (forward-only).
+
+**Recommended order: change the database image first, then apply this update.**
+
+1. On the `Postgres` service, set the source image to `paradedb/paradedb:v0.25.11-pg17` and redeploy it. Keep the volume and variables. The current `app` keeps working on it.
+2. Apply the template update. On its first start `app` upgrades the extensions in the `weknora` database to match the image (`pg_search` 0.25.11, `vector` 0.8.4).
+3. Optional, for databases created later from `template1`: in the `Postgres` service shell run `psql -U postgres -d template1 -c "ALTER EXTENSION pg_search UPDATE; ALTER EXTENSION vector UPDATE;"`.
+
+**If you applied this update before changing the image**, the migration that upgrades the extensions has already run and found nothing to do, and it does not run again. After switching the image, run in the `Postgres` service shell:
+
+```
+psql -U postgres -d weknora -c "ALTER EXTENSION pg_search UPDATE; ALTER EXTENSION vector UPDATE;"
+```
+
+(and the same with `-d template1`). Without it the database runs the new libraries against the old extension catalog, which upstream reports can crash the server when some pg_search functions are called.
+
+Staying on v0.22.2 also works with v0.8.3, but keeps the crash risk on large imports. Once Postgres has run on v0.25.11 you cannot go back to the v0.22.2 image on the same volume, because the old image cannot replay the newer write-ahead log; going back means restoring the backup.
+
+Verified locally with the template's wrappers and variables:
+
+- **Image first:** a v0.8.2 database on ParadeDB v0.22.2 with 300 indexed rows moved to v0.25.11, with `app` still on v0.8.2. Then `app` v0.8.3 migrated it to 118 and upgraded both extensions. Keyword (BM25) and vector search returned identical results before and after, and new rows were indexed and found.
+- **App first:** v0.8.3 on ParadeDB v0.22.2 migrated a v0.8.2 database, kept the existing login token and knowledge bases, and created new ones. After a later image switch the catalog stayed at 0.22.2 until the SQL above was run.
+- **Fresh:** a fresh v0.8.3 deploy on v0.25.11 registers, logs in and creates knowledge bases, with the BM25 index in place.
+
 ## 2026-10 — WeKnora v0.8.2
 
 - `frontend`, `app` and `docreader` run `wechatopenai/weknora-ui`, `-app` and `-docreader` `:v0.8.2` (were v0.8.0).
