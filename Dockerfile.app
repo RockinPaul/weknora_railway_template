@@ -1,4 +1,4 @@
-FROM wechatopenai/weknora-app:v0.8.3
+FROM wechatopenai/weknora-app:v0.9.0
 
 # Upstream image unchanged; the wrapper validates the secrets, binds on both address families
 # and then runs upstream's own entrypoint (chown of the upload volume, drop to appuser).

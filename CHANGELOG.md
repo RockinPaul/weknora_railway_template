@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-11-02 — WeKnora v0.9.0
+
+- `frontend`, `app` and `docreader` run `wechatopenai/weknora-ui`, `-app` and `-docreader` `:v0.9.0` (were v0.8.3). Upstream's `frontend/nginx.conf` and `nginx-api-proxy.conf` are unchanged between the two tags, so the Railway nginx config carries over as is. ParadeDB stays on v0.25.11 and Redis on 7.0, as upstream's compose file does.
+- Security fixes: request bodies are capped before they are read (IM callbacks, hybrid search and knowledge-base definitions at 1 MiB), web-search and vision provider responses are bounded instead of buffered whole, and Feishu tenant token fragments are no longer logged.
+- New variables are all optional with upstream defaults (`VLM_MAX_TOKENS`, `WEKNORA_WEB_FETCH_TIMEOUT`, `WEKNORA_TENANT_DEFAULT_STORAGE_QUOTA_MB`, the `DOCREADER_PREPROCESS_*` limits for the off-by-default OCR preprocessing). `LOG_FORMAT` is read as a fallback for the new `WEKNORA_LOG_FORMAT`.
+
+### Upgrading an existing deployment
+
+Nothing to change. **Back up Postgres first**: `app` applies forward-only migrations on its first start.
+
 ## 2026-10-16 — WeKnora v0.8.3, and ParadeDB v0.25.11 for Postgres
 
 - `frontend`, `app` and `docreader` run `wechatopenai/weknora-ui`, `-app` and `-docreader` `:v0.8.3` (were v0.8.2). The nginx config upstream ships is unchanged, so `web/` only changes its version comments.

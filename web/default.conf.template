@@ -1,4 +1,4 @@
-# Railway version of upstream frontend/nginx.conf (WeKnora v0.8.3).
+# Railway version of upstream frontend/nginx.conf (WeKnora v0.9.0).
 # Differences from upstream:
 #   * listens on __PORT__ (IPv4 and IPv6), rendered by /railway-entrypoint.sh
 #   * resolver __RESOLVER__ + a variable upstream, so nginx re-resolves the app's private
